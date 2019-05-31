@@ -3,6 +3,7 @@
 namespace App\Controllers;
 use App\Form;
 use App\Password;
+use App\Http;
 
 class ContatoController extends Controller 
 {
@@ -20,7 +21,12 @@ class ContatoController extends Controller
 			$data = $this->model->select()->where("id", $id)->run("fetch");
 		}
 
- 		echo json_encode($data);
+ 		if($data !== []) {
+ 			http::jsonResponseData(true, "", $data);
+ 		} else {
+ 			http::jsonResponseData(false, "Não foi possível retornar os contatos!", null);
+ 		}
+ 		
 	}
 
 	public function insert() 
@@ -28,32 +34,31 @@ class ContatoController extends Controller
 
 		$fields = ['nome'=>FILTER_SANITIZE_STRING, 'sobrenome'=>FILTER_SANITIZE_STRING, 'email'=>FILTER_SANITIZE_STRING, 'senha'=>FILTER_SANITIZE_STRING, 'telefone_comercial'=>FILTER_SANITIZE_STRING, 'telefone_residencial'=>FILTER_SANITIZE_STRING, 'telefone_celular'=>FILTER_SANITIZE_STRING];
 
-		$this->form_manager = new Form($fields);
+		$this->form_manager = new Form($fields, INPUT_POST);
         $form_data = $this->form_manager->getFilteredData();
 
        	if(!$this->verifyIfEmailIsRegistred($form_data['email'])) {
 	        $form_data['senha'] = Password::hashPassword($form_data['senha']);
 	          
 	        if($this->model->insert($form_data)->run("lastInsertId", $form_data)) {
-	        	$this->jsonResponse(true, "");
+	        	Http::jsonResponse(true, "");
 	        } else {
-	        	$this->jsonResponse(false, "Não foi possível cadastrar seu usuário, verifique todos os seus campos ou tente mais tarde!");
+	        	Http::jsonResponse(false, "Não foi possível cadastrar seu usuário, verifique todos os seus campos ou tente mais tarde!");
 	        }
       	} else {
-      		$this->jsonResponse(false, "Email já cadastrado!");
+      		Http::jsonResponse(false, "Email já castrado!");
       	}
 	}
 
 	public function update($id) 
 	{
-		$form_data = Form::getPutRequest();
-		
-		
+		$this->form_manager = new Form(null, null, true);
+		$form_data = $this->form_manager->getFilteredData();
 
 		if($this->model->update($form_data, $id)->run("rowCount", $form_data)) {
-			$this->jsonResponse(true, "");
+			Http::jsonResponse(true, "");
 		} else {
-			$this->jsonResponse(false, "Não foi possível atualizar suas informações");
+			Http::jsonResponse(false, "Não foi possível atualizar suas informações");
 		}
 
 	}
@@ -75,9 +80,29 @@ class ContatoController extends Controller
 
 		$user = ['id'=>$data['id'], 'username'=>$data['nome'], 'email'=>$data['email'], 'password'=>$data['senha']];
 
-		if($this->auth->login($form_data['senha'], $user, null, false)) {
-			echo json_encode($user);
+		$login = $this->auth->login($form_data['senha'], $user, null, false);
+		
+		if($login === true) {
+			if($data['deleted'] == true) {
+				Http::jsonResponseData(false, "Seu perfil foi removido!", null);
+			} elseif($data['accepted'] == true) {
+				Http::jsonResponseData(true, " ", $user);
+			} else {
+				Http::jsonResponseData(false, "Você ainda não foi aprovado por um administrador", null);
+			}
+		} else {
+			Http::jsonResponseData(false,$login,null);
 		}
+		
+	}
+
+	public function acceptContact($id) {
+		if($this->model->update(['accepted'=>true], $id)->run("rowCount", ['accepted'=>true])) {
+			Http::jsonResponse(true, "");
+		} else {
+			Http::jsonResponse(false, "Não foi possível aceitar este usuário!");
+		}
+
 	}
 
 	private function verifyIfEmailIsRegistred($email)

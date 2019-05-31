@@ -29,12 +29,16 @@ class Controller
         $this->auth = new Auth();
     }
     
-    protected function jsonResponse($success, $message)
+    protected function jsonResponse($success, $message, Array $data = null)
     {
         $response = array(
             "success"=>$success,
             "message"=>$message
         );
+
+        if($extra !== null) {
+            $response['data'] = $data;
+        }
 
         echo json_encode($response);
     }

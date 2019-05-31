@@ -4,6 +4,7 @@
  * LAST EDIT: 2018-10-22
  */
 namespace App;
+use App\Http;
 
 class Form{
     
@@ -12,23 +13,39 @@ class Form{
     private $fields;
     private $filters;
     private $method;
+    private $isJsonRequest;
     
-    public function __construct(array $data, $method = INPUT_POST){
-        $this->fields   = array_keys($data);
-        $this->filters  = $data;
-        $this->method   = $method;
+    public function __construct(array $data = null, $method = null, $isJsonRequest = false){
+        if(!$isJsonRequest) {
+
+            if($method === null) {
+                $method = INPUT_POST;
+            }
+
+            $this->fields   = array_keys($data);
+            $this->filters  = $data;
+            $this->method   = $method;
+        }
+        
+        $this->isJsonRequest = $isJsonRequest;
     }
     
     public function getFilteredData(){
-        if(!$this->data){
-            foreach($this->fields as $field){
-                $this->data[$field] = filter_input($this->method, $field, $this->filters[$field]);
-                
-                if($this->data[$field] === ""){
-                    $this->data[$field] = null;
+
+        if($this->isJsonRequest) {
+            $this->data = $this->filterJsonData();
+        } else {
+            if(!$this->data){
+                foreach($this->fields as $field){
+                    $this->data[$field] = filter_input($this->method, $field, $this->filters[$field]);
+                    
+                    if($this->data[$field] === ""){
+                        $this->data[$field] = null;
+                    }
                 }
             }
         }
+
         return $this->data;
     }
     
@@ -40,9 +57,9 @@ class Form{
          );
     }
 
-    public static function getPutRequest()//PHP Don't have an option to filter a PUT request with filter_input function
+    private function filterJsonData()//PHP Don't have an option to filter a PUT request with filter_input function
     {
-       $data = json_decode(file_get_contents("php://input"), true);
+       $data = Http::requestArray();
        $args = [];
     
        foreach ($data as $key => $value) {

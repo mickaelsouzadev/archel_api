@@ -1,7 +1,7 @@
 <?php  
 /* PHP Class for managing the authentication of the users
  * AUTHOR: Mickael Souza
- * LAST EDIT: 2019-05-13
+ * LAST EDIT: 2019-05-28
  */
 namespace App;
 use App\Session;
@@ -32,8 +32,8 @@ class Auth
 			} else {
 				throw new \Exception('Email ou senha incorretos!');
 			}
-		} catch(\Exception $e) {
-			print $e->getMessage();
+		} catch(\Exception $exception) {
+			return $exception->getMessage();
 		}
 
 	}
