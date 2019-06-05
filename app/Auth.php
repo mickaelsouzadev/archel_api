@@ -7,6 +7,7 @@ namespace App;
 use App\Session;
 use App\Cookie;
 use App\Password;
+use App\Http;
 // use App\Models\UserModel;
 
 class Auth 
@@ -63,6 +64,7 @@ class Auth
 			return false;
 		}	 
 	}
+
 	public static function verifyUserIsLogged()
 	{	
 		if(Session::sessionExists('user')) {
@@ -71,6 +73,7 @@ class Auth
 			return Cookie::cookieExists('user');
 		}
 	}
+
 	public function createSession($type = 'user')
 	{
 		
@@ -82,13 +85,63 @@ class Auth
 
 		
 	}
-		
 
 	public function createCookie($type = 'user')
 	{
 		Cookie::setCookies([$type => $this->user['username'], 'password' => $this->user['password']]);
 	}
 
+	public function getJwtToken($password, $alg = 'HS256') 
+	{
+		$header = [
+			'alg' => $alg,
+			'type' => 'JWT'
+		];
+
+		$header = base64_encode(json_encode($header));
+
+		$payload = [
+			'iss' => $_SERVER['HTTP_HOST'],
+			'password' => $password
+		];
+
+		$payload = base64_encode(json_encode($payload));
+
+		$signature = base64_encode(hash_hmac('sha256',"$header.$payload",'fr12018arch3l',true));
+		
+		$jwt = "$header.$payload.$signature";
+
+		return $jwt;
+	}
+
+	public static function verifyJwtToken()
+	{
+		$bearer_token = Http::requestAHeader("authorization");
+		
+		if (preg_match('/Bearer\s(\S+)/', $bearer_token, $matches)) {
+            $token = $matches[1];
+            
+            $part = explode(".",$token);
+            $header = $part[0];
+            $payload = $part[1];
+            $signature = $part[2];
+
+            $valid = base64_encode(hash_hmac('sha256',"$header.$payload",'fr12018arch3l',true));
+
+            if($valid == $signature) {
+            	return true;
+            } else {
+            	return false;
+            }
+
+        } else {
+        	return false;
+        }
+
+
+		
+	}
+	
 	public function logout()
 	{
 		if(Session::sessionExists('user') || Cookie::cookieExists('user')) {

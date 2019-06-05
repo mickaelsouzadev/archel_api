@@ -15,12 +15,12 @@ class ContatoController extends Controller
 
 	public function index($id = null) 
 	{
-		$data = $this->model->select()->where("deleted", 0)->run("fetchAll");
+		$data = $this->model->select()->where("deleted", 0)->where("accepted", 1)->run("fetchAll");
 		 
 		if($id) {
 			$data = $this->model->select()->where("id", $id)->run("fetch");
 		}
-
+	
  		if($data !== []) {
  			http::jsonResponseData(true, "", $data);
  		} else {
@@ -65,7 +65,16 @@ class ContatoController extends Controller
 
 	public function delete($id) 
 	{
-		print $this->model->update(['deleted'=>1], $id)->run("rowCount", ['deleted'=>1]);
+		if($this->model->update(['deleted'=>1], $id)->run("rowCount", ['deleted'=>1])) {
+			Http::jsonResponse(true, "");
+		} else {
+			Http::jsonResponse(false, "Não foi possível excluir este usuaário!");
+		}
+	}
+
+	public function deleteDefinitively($id) 
+	{
+		print $this->model->delete($id)->run("rowCount");
 	}
 
 	public function login()
@@ -78,14 +87,16 @@ class ContatoController extends Controller
 
 		$data = $this->model->select()->where('email', $form_data['email'])->run("fetch", $form_data);
 
-		$user = ['id'=>$data['id'], 'username'=>$data['nome'], 'email'=>$data['email'], 'password'=>$data['senha']];
+		$user = ['id'=>$data['id'], 'username'=>$data['nome'], 'email'=>$data['email'], 'password'=>$data['senha'], 'admin'=>$data['admin']];
 
 		$login = $this->auth->login($form_data['senha'], $user, null, false);
+
 		
 		if($login === true) {
 			if($data['deleted'] == true) {
 				Http::jsonResponseData(false, "Seu perfil foi removido!", null);
 			} elseif($data['accepted'] == true) {
+				$user['token'] = $this->auth->getJwtToken($user['password']);
 				Http::jsonResponseData(true, " ", $user);
 			} else {
 				Http::jsonResponseData(false, "Você ainda não foi aprovado por um administrador", null);

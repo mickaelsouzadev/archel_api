@@ -20,6 +20,19 @@ class Http
 		return json_decode(self::request(), true);
 	}
 
+	public static function requestHeaders() 
+	{
+
+		return apache_request_headers();
+	}
+
+	public static function requestAHeader($key)
+	{
+		$header = self::requestHeaders();
+		
+		return $header[$key];
+	}
+
 	public static function jsonResponse($success, $message = null)
 	{
 		 $response = array(
