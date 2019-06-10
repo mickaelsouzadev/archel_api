@@ -23,7 +23,7 @@ class Email
 	private $replyUser;
 	private $mailer;
 
-	public function __construct($from = 'mickael.souza.if@gmail.com', $name = 'Arthur & Michel - Autopeças', $to, $message, $html = null, $replyUser = null)
+	public function __construct($from = 'mickael.souza.if@gmail.com', $name = 'Lista de Contatos', $to, $message, $html = null, $replyUser = null)
 	{
 		$this->mailer = new PHPMailer(true);
 		$this->from = $from;

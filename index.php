@@ -1,4 +1,5 @@
 <?php  
+header('Access-Control-Allow-Methods: GET');
 
 require 'vendor\autoload.php';
 
@@ -8,6 +9,9 @@ use App\Session;
 use App\Cookie;
 
 
-echo $dispatcher->dispatch($method, $uri); 
-
-// var_dump(Session::getAllSessions());
+try {
+	echo $dispatcher->dispatch($method, $uri);
+} catch(Phroute\Phroute\Exception\HttpRouteNotFoundException $e) {
+	echo "<h1>Erro 404</h1>";
+	http_response_code(404);
+}

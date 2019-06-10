@@ -107,7 +107,19 @@ class ContatoController extends Controller
 		
 	}
 
-	public function acceptContact($id) {
+	public function getNewContacts()
+	{
+		$data = $this->model->select()->where("deleted", 0)->where("accepted", 0)->run("fetchAll");
+
+		if($data !== []) {
+ 			http::jsonResponseData(true, "", $data);
+ 		} else {
+ 			http::jsonResponseData(false, "Nenhum contato novo na lista de espera", null);
+ 		}
+	}
+
+	public function acceptContact($id) 
+	{
 		if($this->model->update(['accepted'=>true], $id)->run("rowCount", ['accepted'=>true])) {
 			Http::jsonResponse(true, "");
 		} else {
@@ -116,6 +128,14 @@ class ContatoController extends Controller
 
 	}
 
+	public function sendEmailToAllUsers()
+	{
+		$data = $this->model->select()->where("deleted", 0)->where("accepted", 1)->run("fetchAll");
+
+		foreach ($data as $user) {
+			print "<br>{$user['email']}<br>";
+		}
+	}
 	private function verifyIfEmailIsRegistred($email)
     {
         return $this->model->select()->where('email', $email)->run("rowCount");

@@ -16,5 +16,7 @@ class HomeController extends Controller{
 		$data['title'] = "Welcome!";
         $this->view->loadPage("home",$data);
     }
+
+  
     
 }
